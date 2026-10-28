@@ -1,0 +1,35 @@
+name: Verify public APK feed
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Signed APK release']
+    types: [completed]
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-feed.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download and verify official APK tool
+        run: |
+          set -eu
+          curl -fsSL --retry 3 https://dl-cdn.alpinelinux.org/alpine/edge/main/x86_64/apk-tools-static-3.0.8-r0.apk -o apk-tools.apk
+          echo '673f1bfb22136fc42ca035321cf731a4ad0452c000928666cb39a138f0c277bf  apk-tools.apk' | sha256sum -c -
+          tar -xzf apk-tools.apk sbin/apk.static
+      - name: Fetch packages through public index in isolated directory
+        run: |
+          set -eu
+          base=https://jerryfecl3.github.io/openwrt-dhcpplus/openwrt-25.12/x86_64
+          mkdir -p keys downloaded
+          curl -fsSL --retry 6 --retry-delay 10 --retry-all-errors "$base/dhcpplus-public.pem" -o keys/dhcpplus-public.pem
+          echo '801b02cf7ddbc3990ff92fae9a7281172285b080dbb30a65841b8b84a635e46b  keys/dhcpplus-public.pem' | sha256sum -c -
+          curl -fsSL --retry 3 "$base/Packages.adb" -o Packages.adb
+          ./sbin/apk.static --keys-dir "$PWD/keys" verify Packages.adb
+          ./sbin/apk.static --keys-dir "$PWD/keys" --repositories-file /dev/null --repository "$base/Packages.adb" --arch x86_64 --no-cache fetch --output downloaded netifd-proto-dhcpplus luci-proto-dhcpplus
+          ./sbin/apk.static --keys-dir "$PWD/keys" verify downloaded/*.apk
+          mkdir no-keys
+          if ./sbin/apk.static --keys-dir "$PWD/no-keys" verify Packages.adb; then exit 1; fi
