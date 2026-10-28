@@ -1,0 +1,60 @@
+name: Signed APK release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: dhcpplus-release
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.repository == 'JerryFecl3/openwrt-dhcpplus'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Test LuCI fields
+        run: |
+          node tests/luci-fields.cjs
+          node tests/luci-defaults.cjs
+      - name: Build and sign
+        env:
+          APK_SIGNING_KEY: ${{ secrets.APK_SIGNING_KEY }}
+        run: |
+          set -eu
+          umask 077
+          key="$RUNNER_TEMP/dhcpplus-signing.pem"
+          trap 'rm -f "$key"' EXIT
+          test -n "$APK_SIGNING_KEY"
+          printf '%s\n' "$APK_SIGNING_KEY" > "$key"
+          unset APK_SIGNING_KEY
+          SIGNING_KEY="$key" sh tools/build-feed.sh
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          tag="v$(cat VERSION)"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then test "$GITHUB_REF_NAME" = "$tag"; fi
+          gh release create "$tag" --target "$GITHUB_SHA" --title "DHCP+ $tag" --notes-file docs/release-notes.md dist/openwrt-25.12/x86_64/*
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy APK feed
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e

@@ -15,6 +15,7 @@ for pkg,name,src,mode in files:
     data=src.read_bytes()
     if src.suffix in ('.sh','.js'): data=data.replace(b'\r\n',b'\n')
     target.write_bytes(data)
+    target.chmod(mode)
 with tarfile.open(root/'build'/'package-roots.tar.gz','w:gz') as tar:
     for pkg,name,src,mode in files:
         path=stage/pkg/name

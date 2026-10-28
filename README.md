@@ -2,7 +2,7 @@
 
 为 OpenWrt 增加 DHCP+ 协议选项，继续使用系统原版 udhcpc 和 netifd DHCP 脚本。
 
-当前源码对应 `netifd-proto-dhcpplus 0.3.0-r2` 和 `luci-proto-dhcpplus 0.3.0-r3`。已验证环境为 OpenWrt 25.12 系列、x86_64/musl、辽宁联通的一条 IPTV 线路；不代表其他地区、运营商或架构已经兼容。
+当前源码对应 `netifd-proto-dhcpplus 0.3.1-r1` 和 `luci-proto-dhcpplus 0.3.1-r1`。已验证环境为 OpenWrt 25.12 系列、x86_64/musl、辽宁联通的一条 IPTV 线路；不代表其他地区、运营商或架构已经兼容。
 
 算法字段、合成测试向量、进程隔离、续租差异与证据边界见 [DHCP+ 协议与实现笔记](docs/protocol.md)。
 
@@ -20,11 +20,14 @@ Option60 = 00001f28 || SHA1(ASCII(十进制 XID + LUIOITDCNNCMPVHP))
 
 ## 安装与使用
 
-安装两个匹配架构的包。开发包未签名时，仅本次安装使用 `--allow-untrusted`：
+签名 APK、软件源和公钥见 [安装与发布说明](docs/publishing.md)。配置可信公钥和软件源后：
 
 ```sh
-apk add --allow-untrusted /tmp/netifd-proto-dhcpplus-0.3.0-r2.apk /tmp/luci-proto-dhcpplus-0.3.0-r3.apk
+apk update
+apk add luci-proto-dhcpplus
 ```
+
+后续使用 `apk upgrade netifd-proto-dhcpplus luci-proto-dhcpplus` 更新。本项目不自动执行升级，也不会在安装/升级时主动重启接口。
 
 首次安装后 netifd 需要重新发现协议，请在维护窗口重启设备。插件不会自行重启全网。
 

@@ -6,14 +6,14 @@ set -eu
 : "${OUT:?Set OUT to the output directory}"
 mkdir -p "$OUT"
 "$APK_BUILD" mkpkg --compat 3.0.0 --files "$ROOTS/core" \
-    --info name:netifd-proto-dhcpplus --info version:0.3.0-r2 \
+    --info name:netifd-proto-dhcpplus --info version:0.3.1-r1 \
     --info arch:x86_64 --info license:MIT \
-    --info 'description:Automatic Liaoning Option60 for stock OpenWrt DHCP clients' \
+    --info 'description:Automatic DHCP+ Option60 for stock OpenWrt DHCP clients' \
     --info 'depends:libc busybox netifd openssl-util' \
-    --output "$OUT/netifd-proto-dhcpplus-0.3.0-r2.apk"
+    --output "$OUT/netifd-proto-dhcpplus-0.3.1-r1.apk"
 "$APK_BUILD" mkpkg --compat 3.0.0 --files "$ROOTS/luci" \
-    --info name:luci-proto-dhcpplus --info version:0.3.0-r3 \
+    --info name:luci-proto-dhcpplus --info version:0.3.1-r1 \
     --info arch:noarch --info license:MIT \
     --info 'description:LuCI protocol UI for DHCP+ automatic authentication' \
-    --info 'depends:luci-base netifd-proto-dhcpplus=0.3.0-r2' \
-    --output "$OUT/luci-proto-dhcpplus-0.3.0-r3.apk"
+    --info 'depends:luci-base netifd-proto-dhcpplus=0.3.1-r1' \
+    --output "$OUT/luci-proto-dhcpplus-0.3.1-r1.apk"
