@@ -12,7 +12,7 @@ curl --fail --location --retry 3 https://dl-cdn.alpinelinux.org/alpine/edge/main
 echo '673f1bfb22136fc42ca035321cf731a4ad0452c000928666cb39a138f0c277bf  build/downloads/apk-tools.apk' | sha256sum -c -
 tar --zstd -xf "build/downloads/$tc" -C build/toolchain --strip-components=1
 tar -xzf build/downloads/apk-tools.apk -C build/apk sbin/apk.static
-cc=$(find -L "$PWD/build/toolchain" -type f -name 'x86_64-openwrt-linux-musl-gcc' -print -quit)
+cc=$(find "$PWD/build/toolchain" -name 'x86_64-openwrt-linux-musl-gcc' -print -quit)
 test -n "$cc"
 export STAGING_DIR="$PWD/build/toolchain"
 "$cc" -Os -shared -fPIC -Wall -Wextra -Werror -o build/udhcpc-xid.so package/netifd-proto-dhcpplus/src/udhcpc-xid.c
