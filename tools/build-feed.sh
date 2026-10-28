@@ -1,6 +1,7 @@
 #!/bin/sh
 # Run on a Linux x86_64 build host. Never run against the router filesystem.
 set -eu
+umask 022
 cd "$(dirname "$0")/.."
 : "${SIGNING_KEY:?Set SIGNING_KEY to the private PEM file}"
 mkdir -p build/downloads build/toolchain build/apk dist/openwrt-25.12/x86_64
@@ -11,7 +12,7 @@ curl --fail --location --retry 3 https://dl-cdn.alpinelinux.org/alpine/edge/main
 echo '673f1bfb22136fc42ca035321cf731a4ad0452c000928666cb39a138f0c277bf  build/downloads/apk-tools.apk' | sha256sum -c -
 tar --zstd -xf "build/downloads/$tc" -C build/toolchain --strip-components=1
 tar -xzf build/downloads/apk-tools.apk -C build/apk sbin/apk.static
-cc=$(find "$PWD/build/toolchain" -type f -name 'x86_64-openwrt-linux-musl-gcc' -print -quit)
+cc=$(find -L "$PWD/build/toolchain" -type f -name 'x86_64-openwrt-linux-musl-gcc' -print -quit)
 test -n "$cc"
 export STAGING_DIR="$PWD/build/toolchain"
 "$cc" -Os -shared -fPIC -Wall -Wextra -Werror -o build/udhcpc-xid.so package/netifd-proto-dhcpplus/src/udhcpc-xid.c
@@ -19,6 +20,7 @@ python3 tools/stage.py --helper build/udhcpc-xid.so
 export APK_BUILD="$PWD/build/apk/sbin/apk.static"
 export ROOTS="$PWD/build/roots"
 export OUT="$PWD/dist/openwrt-25.12/x86_64"
+sudo chown -R 0:0 "$ROOTS"
 sh tools/mkpkg.sh
 openssl pkey -in "$SIGNING_KEY" -pubout -out build/derived-public.pem
 cmp keys/dhcpplus-public.pem build/derived-public.pem
