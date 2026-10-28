@@ -4,6 +4,8 @@
 
 当前源码对应 `netifd-proto-dhcpplus 0.3.0-r2` 和 `luci-proto-dhcpplus 0.3.0-r3`。已验证环境为 OpenWrt 25.12 系列、x86_64/musl、辽宁联通的一条 IPTV 线路；不代表其他地区、运营商或架构已经兼容。
 
+算法字段、合成测试向量、进程隔离、续租差异与证据边界见 [DHCP+ 协议与实现笔记](docs/protocol.md)。
+
 ## 工作方式
 
 每次客户端启动生成随机非零 31 位 XID，并计算：
