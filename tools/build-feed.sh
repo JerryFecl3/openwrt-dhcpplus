@@ -24,8 +24,10 @@ sudo chown -R 0:0 "$ROOTS"
 sh tools/mkpkg.sh
 openssl pkey -in "$SIGNING_KEY" -pubout -out build/derived-public.pem
 cmp keys/dhcpplus-public.pem build/derived-public.pem
-"$APK_BUILD" adbsign --sign-key "$SIGNING_KEY" "$OUT"/*.apk
-"$APK_BUILD" mkndx --sign-key "$SIGNING_KEY" --description 'DHCP+ for OpenWrt 25.12 x86_64' --pkgname-spec '${name}-${version}.apk' --output "$OUT/Packages.adb" "$OUT"/*.apk
+# Only the freshly built unsigned local files are allowed here; downstream
+# indexing, verification and client installation always require the public key.
+"$APK_BUILD" --allow-untrusted adbsign --sign-key "$SIGNING_KEY" "$OUT"/*.apk
+"$APK_BUILD" --keys-dir "$PWD/keys" mkndx --sign-key "$SIGNING_KEY" --description 'DHCP+ for OpenWrt 25.12 x86_64' --pkgname-spec '${name}-${version}.apk' --output "$OUT/Packages.adb" "$OUT"/*.apk
 "$APK_BUILD" --keys-dir "$PWD/keys" verify "$OUT"/*.apk "$OUT/Packages.adb"
 mkdir -p build/no-keys
 if "$APK_BUILD" --keys-dir "$PWD/build/no-keys" verify "$OUT/Packages.adb"; then
