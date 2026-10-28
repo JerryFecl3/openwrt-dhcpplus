@@ -26,7 +26,12 @@ openssl pkey -in "$SIGNING_KEY" -pubout -out build/derived-public.pem
 cmp keys/dhcpplus-public.pem build/derived-public.pem
 # Only the freshly built unsigned local files are allowed here; downstream
 # indexing, verification and client installation always require the public key.
-"$APK_BUILD" --allow-untrusted adbsign --sign-key "$SIGNING_KEY" "$OUT"/*.apk
+# apk-tools 3.0.8 keeps signing state between arguments: use one invocation
+# per package, and verify each result before creating the index.
+for package in "$OUT"/*.apk; do
+    "$APK_BUILD" --allow-untrusted adbsign --sign-key "$SIGNING_KEY" "$package"
+    "$APK_BUILD" --keys-dir "$PWD/keys" verify "$package"
+done
 "$APK_BUILD" --keys-dir "$PWD/keys" mkndx --sign-key "$SIGNING_KEY" --description 'DHCP+ for OpenWrt 25.12 x86_64' --pkgname-spec '${name}-${version}.apk' --output "$OUT/Packages.adb" "$OUT"/*.apk
 "$APK_BUILD" --keys-dir "$PWD/keys" verify "$OUT"/*.apk "$OUT/Packages.adb"
 mkdir -p build/no-keys
